@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAI</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            color: white;
+            flex-direction: column;
+            font-family: 'Arial', sans-serif;
+
+
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent background */
+            padding: 10px; /* Add padding for spacing */
+            border-radius: 30px; /* Rounded corners */
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+            transition: background-color 0.3s ease; /* Transition for hover effect */
+        }
+
+        .input-container:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Darken background on hover */
+        }
+
+        spline-viewer {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Updated input box styling */
+       #commandInput {
+            padding: 15px;
+            width: 300px; /* Adjust width for better fit */
+            font-size: 18px;
+            border: 2px solid #ff512f;
+            border-radius: 50px;
+            background-color: transparent; /* Make background transparent */
+            color: white;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s ease; /* Transition for border color */
+        }
+
+        #commandInput:focus {
+            border-color: #dd2476; /* Change border color on focus */
+            box-shadow: 0 0 10px rgba(255, 81, 47, 0.5); /* Add shadow on focus */
+        }
+
+        /* Send button styling */
+        #sendCommandButton {
+            padding: 12px 20px;
+            cursor: pointer;
+            margin-left: 15px; /* Space between input and button */
+            background: linear-gradient(135deg, #ff512f, #dd2476);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 16px;
+            position: relative; /* Needed for button overlay */
+            overflow: hidden; /* Hides the pseudo-element */
+            transition: all 0.3s ease;
+        }
+
+        #sendCommandButton::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background-color: rgba(255, 255, 255, 0.2); /* Light overlay */
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0); /* Start with scale 0 */
+            transition: transform 0.5s ease; /* Smooth transition */
+            z-index: 0; /* Behind the text */
+        }
+        
+        #sendCommandButton:hover {
+            background-color: #dd2476;
+            box-shadow: 0 0 20px rgba(255, 81, 47, 0.7);
+            transform: scale(1.1);
+        }
+
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Voice/Text mode button */
+        #modeToggleButton {
+            padding: 12px 20px;
+            cursor: pointer;
+            margin-right: 15px; /* Space between input and button */
+            background: linear-gradient(135deg, #12c2e9, #c471ed);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #modeToggleButton:hover {
+            background-color: #c471ed;
+            box-shadow: 0 0 20px rgba(18, 194, 233, 0.7);
+        }
+
+        #responseOutput p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <spline-viewer 
+    url="https://prod.spline.design/jo5A-7FPTF-EAHuS/scene.splinecode" ></spline-viewer>
+
+    <div id="responseOutput"></div>
+
+    <div class="input-container">
+        <!-- Mode toggle button -->
+        <button id="modeToggleButton">Voice Mode</button>
+        
+        <input type="text" id="commandInput" placeholder="Type your command here...">
+        <button id="sendCommandButton"><span>Send Command</span></button>
+    </div>
+    
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.30/build/spline-viewer.js"></script>
+    <script src="script.js"></script> <!-- Link to your external JS file -->
+
+    <script>
+        const sendCommandButton = document.getElementById('sendCommandButton');
+        const commandInput = document.getElementById('commandInput');
+        const modeToggleButton = document.getElementById('modeToggleButton');
+        let isTextMode = true; // Variable to track mode
+    
+        sendCommandButton.onclick = () => {
+            const commands = commandInput.value.trim();
+            if (commands) {
+                sendCommands(commands.split(';'));  // Send the command to the server
+                commandInput.value = '';  // Clear input after sending commands
+            } else {
+                console.log("Please enter at least one command.");
+            }
+        };
+    
+        modeToggleButton.onclick = () => {
+            isTextMode = !isTextMode; // Toggle mode
+            modeToggleButton.textContent = isTextMode ? 'Voice Mode' : 'Text Mode';
+            
+            // Call the function to speak the mode change
+            const modeText = isTextMode ? 'Switched to Text Mode' : 'Switched to Voice Mode';
+            speakResponse(modeText);
+    
+            if (isTextMode) {
+                commandInput.placeholder = "Type your command here...";
+                commandInput.style.display = 'flex';  // Show input in text mode
+                sendCommandButton.style.display = 'flex';  // Show send button in text mode
+                console.log("Switched to Text Mode");
+            } else {
+                commandInput.placeholder = "Speak your command here...";
+                commandInput.style.display = 'none';  // Hide input in voice mode
+                sendCommandButton.style.display = 'none';  // Hide send button in voice mode
+                console.log("Switched to Voice Mode");
+                startVoiceRecognition();  // Start voice recognition when in Voice Mode
+            }
+        };
+    
+        function sendCommands(commands) {
+            fetch('/api/handle_commands', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ commands }),  // Send commands as an array
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                data.responses.forEach(responseText => {
+                    console.log(`Response: ${responseText}`);
+                    speakResponse(responseText);  // Speak the response after receiving it
+                });
+            })
+            .catch((error) => {
+                console.error(`Fetch error: ${error}`);
+            });
+        }
+    
+        function speakResponse(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);  // Create a new speech instance
+                window.speechSynthesis.cancel();  // Cancel any ongoing speech before starting a new one
+                window.speechSynthesis.speak(utterance);  // Speak the new response
+            } else {
+                console.log("Speech synthesis not supported.");
+            }
+        }
+    
+        function startVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+    
+                recognition.onstart = () => {
+                    console.log("Voice recognition started");
+                };
+    
+                recognition.onresult = (event) => {
+                    const result = event.results[0][0].transcript;
+                    console.log("Recognized command: " + result);
+                    commandInput.value = result; // Set recognized command to input field
+                    sendCommandButton.click(); // Automatically send recognized command
+                };
+    
+                recognition.onerror = (event) => {
+                    console.error("Voice recognition error: " + event.error);
+                };
+    
+                recognition.start();
+            } else {
+                console.log("Voice recognition not supported.");
+            }
+        }
+    </script>
+    
+    
+
+</body>
+</html>

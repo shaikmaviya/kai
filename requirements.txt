@@ -1,0 +1,5 @@
+websearch
+pywhatkit
+speech_recognition
+pyttsx3
+requests

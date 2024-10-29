@@ -1,5 +1,4 @@
 
-[Uploading Voice Interaction Animation@9-960x930.jpg…]
 
 # Kai - Your Personal Assistant
 

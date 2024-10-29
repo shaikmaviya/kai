@@ -11,7 +11,7 @@ Welcome to **Kai**, your intelligent personal assistant designed to make your li
 - **Application Control**: Open software applications installed on your PC through voice commands.
 
 
-[video]("voice-interaction-animation.mp4").
+[video](voice-interaction-animation.mp4).
 
 ## Getting Started
 

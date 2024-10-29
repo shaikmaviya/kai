@@ -1,3 +1,6 @@
+
+[Uploading Voice Interaction Animation@9-960x930.jpg…]
+
 # Kai - Your Personal Assistant
 
 Welcome to **Kai**, your intelligent personal assistant designed to make your life easier! Kai is capable of performing various tasks, including fetching weather information, searching for songs, and providing useful web results.
